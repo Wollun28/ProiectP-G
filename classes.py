@@ -1,19 +1,20 @@
-from sqlalchemy import Create_engine, Column, Integer, String, Sequence,ForeignKey,Text,DECIMAL
+from sqlalchemy import create_engine, Column, Integer, String, Sequence,ForeignKey,Text,DECIMAL
 from sqlalchemy.orm import declarative_base,relationship
+
 Base=declarative_base()
 class Identifier(Base):
     __tablename__ = 'Identifiers'
     
     identifier_name = Column(String(255), primary_key=True)
-    description = Column(Text)
+    description = Column(String(255))
     identifier_type = Column(String(255))
 
 class Country(Base):
     __tablename__ = 'Countries'
-    
-    name = Column(String(255), primary_key=True)
+    id = Column(Integer, primary_key=True,autoincrement=True)
+    name = Column(String(255))
     iso_code = Column(String(255))
-    short_code = Column(String(255))
+    short_code = Column(Integer)
 
 class ConsumerUnit(Base):
     __tablename__ = 'ConsumerUnits'
@@ -74,3 +75,48 @@ class IdentifierCharacteristic(Base):
     characteristic_name = Column(String(255), ForeignKey('Characteristics.name'), primary_key=True)
     identifier = relationship('Identifier')
     characteristic = relationship('Characteristic', primaryjoin="and_(IdentifierCharacteristic.master_name==Characteristic.master_name, 			IdentifierCharacteristic.characteristic_name==Characteristic.name)")
+    
+
+
+from pydantic import BaseModel
+from typing import Optional
+
+class IdentifierCreate(BaseModel):
+    identifier_name: str
+    description: str
+    identifier_type: str
+
+
+class IdentifierResponse(BaseModel):
+
+    identifier_name: str
+    description: str
+    identifier_type: str
+
+    class Config:
+        from_attributes = True  # Enables compatibility with SQLAlchemy models
+
+class IdentifierUpdate(BaseModel):
+    identifier_name: Optional[str] = None
+    description: Optional[str] = None
+    identifier_type: Optional[int] = None
+    
+
+class CountryCreate(BaseModel):
+    name: str
+    iso_code: str
+    short_code: int
+
+class CountryResponse(BaseModel):
+    id: int            # toate au id la response (probabil)
+    name: str
+    iso_code: str
+    short_code: int
+
+    class Config:
+        from_attributes = True  # Enables compatibility with SQLAlchemy models
+
+class CountryUpdate(BaseModel):
+    name: Optional[str] = None
+    iso_code: Optional[str] = None
+    short_code: Optional[int] = None
