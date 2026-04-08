@@ -1,6 +1,6 @@
-from sqlalchemy import Create_engine, Column, Integer, String, Sequence,ForeignKey,relationship,Text,DECIMAL
-from sqlalchemy.orm import declarative_base
-Base=declarative_base
+from sqlalchemy import Create_engine, Column, Integer, String, Sequence,ForeignKey,Text,DECIMAL
+from sqlalchemy.orm import declarative_base,relationship
+Base=declarative_base()
 class Identifier(Base):
     __tablename__ = 'Identifiers'
     
