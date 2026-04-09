@@ -9,20 +9,20 @@ Base=declarative_base()
 
 #CLASE DE BAZA
 class Identifier(Base):
-    __tablename__ = 'Identifiers'
+    _tablename_ = 'Identifiers'
     
     identifier_name = Column(String(255), primary_key=True)
     description = Column(String(255))
     identifier_type = Column(String(255))
 
 class Country(Base):
-    __tablename__ = 'Countries'
+    _tablename_ = 'Countries'
     name = Column(String(255),primary_key=True)
     iso_code = Column(String(255))
     short_code = Column(Integer)
 
 class ConsumerUnit(Base):
-    __tablename__ = 'ConsumerUnits'
+    _tablename_ = 'ConsumerUnits'
     
     number_of_consumers = Column(Integer, primary_key=True)
     country_name = Column(String(255), ForeignKey('Countries.name'), primary_key=True)
@@ -31,7 +31,7 @@ class ConsumerUnit(Base):
 Country.consumer_units = relationship('ConsumerUnit', order_by=ConsumerUnit.number_of_consumers, back_populates='country')
 
 class Ownership(Base):
-    __tablename__ = 'Ownership'
+    _tablename_ = 'Ownership'
     
     identifier_name = Column(String(255), ForeignKey('Identifiers.identifier_name'), primary_key=True)
     originator_first_name = Column(String(255))
@@ -44,7 +44,7 @@ class Ownership(Base):
     identifier = relationship('Identifier')
 
 class Relationship(Base):
-    __tablename__ = 'Relationships'
+    _tablename_ = 'Relationships'
     
     from_identifier_name = Column(String(255), ForeignKey('Identifiers.identifier_name'), primary_key=True)
     to_identifier_name = Column(String(255), ForeignKey('Identifiers.identifier_name'), primary_key=True)
@@ -53,7 +53,7 @@ class Relationship(Base):
     to_identifier = relationship('Identifier', foreign_keys=[to_identifier_name])
 
 class Characteristic(Base):
-    __tablename__ = 'Characteristics'
+    _tablename_ = 'Characteristics'
     
     master_name = Column(String(255), primary_key=True)
     name = Column(String(255), primary_key=True)
@@ -73,7 +73,7 @@ class Characteristic(Base):
     engineering_unit = Column(String(255))
 
 class IdentifierCharacteristic(Base):
-    __tablename__ = 'IdentifierCharacteristics'
+    _tablename_ = 'IdentifierCharacteristics'
     
     identifier_name = Column(String(255), ForeignKey('Identifiers.identifier_name'), primary_key=True)
     master_name = Column(String(255), ForeignKey('Characteristics.master_name'), primary_key=True)
@@ -248,6 +248,3 @@ class CharacteristicUpdate(BaseModel):
     test_frequency: Optional[int] = None
     precision:  Optional[int] = None
     engineering_unit: Optional[str] = None
-    
-    
-    
