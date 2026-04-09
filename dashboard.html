@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Dashboard — Proiect</title>
+  <style>
+    :root {
+      --bg: #0b0f1a;
+      --surface: #111827;
+      --surface2: #1a2234;
+      --border: rgba(255,255,255,0.07);
+      --border2: rgba(255,255,255,0.13);
+      --text: #e8edf5;
+      --muted: #6b7a99;
+      --accent: #4f9eff;
+      --accent-dim: rgba(79,158,255,0.12);
+      --get: #22c55e; --get-bg: rgba(34,197,94,0.1);
+      --post: #4f9eff; --post-bg: rgba(79,158,255,0.1);
+      --put: #f59e0b; --put-bg: rgba(245,158,11,0.1);
+      --patch: #a78bfa; --patch-bg: rgba(167,139,250,0.1);
+      --delete: #f87171; --delete-bg: rgba(248,113,113,0.1);
+      --success: #22c55e; --success-bg: rgba(34,197,94,0.1);
+      --error: #f87171; --error-bg: rgba(248,113,113,0.1);
+      --radius: 10px;
+      --font-mono: 'Consolas', 'Courier New', monospace;
+      --font-sans: 'Segoe UI', system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font-sans); background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.6; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+    .layout { display: flex; min-height: 100vh; }
+    .sidebar {
+      width: 220px; min-width: 220px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 1.5rem 0;
+      position: sticky; top: 0; height: 100vh;
+      overflow-y: auto; display: flex; flex-direction: column;
+    }
+    .sidebar-logo { padding: 0 1.25rem 1.5rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem; }
+    .sidebar-logo h1 { font-size: 15px; font-weight: 600; color: var(--text); }
+    .sidebar-logo p { font-size: 11px; color: var(--muted); font-family: var(--font-mono); margin-top: 3px; }
+    .online-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--success); margin-right: 6px; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); padding: 0 1.25rem; margin: 0.75rem 0 0.4rem; }
+    .nav-item { display: flex; align-items: center; gap: 8px; padding: 7px 1.25rem; font-size: 13px; color: var(--muted); cursor: pointer; transition: all .15s; border-left: 2px solid transparent; user-select: none; }
+    .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+    .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: var(--accent-dim); }
+    .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .5; }
+    .nav-count { margin-left: auto; font-size: 10px; font-family: var(--font-mono); background: var(--surface2); padding: 2px 6px; border-radius: 99px; color: var(--muted); }
+    .sidebar-footer { margin-top: auto; padding: 1rem 1.25rem 0; border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); font-family: var(--font-mono); word-break: break-all; }
+    .main { flex: 1; padding: 2rem 2.5rem; overflow-y: auto; max-width: 900px; }
+    .page-header { margin-bottom: 1.75rem; }
+    .page-header h2 { font-size: 20px; font-weight: 600; }
+    .page-header p { font-size: 13px; color: var(--muted); margin-top: 4px; }
+    .base-url-bar { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 14px; margin-bottom: 1.75rem; }
+    .base-url-bar label { font-size: 11px; color: var(--muted); white-space: nowrap; font-weight: 500; }
+    .base-url-bar input { flex: 1; background: transparent; border: none; outline: none; font-family: var(--font-mono); font-size: 13px; color: var(--accent); }
+    .base-url-status { font-size: 11px; padding: 3px 10px; border-radius: 99px; background: var(--success-bg); color: var(--success); font-weight: 500; white-space: nowrap; }
+    .endpoint { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 8px; overflow: hidden; transition: border-color .2s; }
+    .endpoint:hover { border-color: var(--border2); }
+    .endpoint.expanded { border-color: var(--border2); }
+    .ep-header { display: flex; align-items: center; gap: 12px; padding: 11px 16px; cursor: pointer; user-select: none; }
+    .method-badge { font-family: var(--font-mono); font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 6px; min-width: 58px; text-align: center; letter-spacing: .3px; }
+    .GET    { background: var(--get-bg);    color: var(--get); }
+    .POST   { background: var(--post-bg);   color: var(--post); }
+    .PUT    { background: var(--put-bg);    color: var(--put); }
+    .PATCH  { background: var(--patch-bg);  color: var(--patch); }
+    .DELETE { background: var(--delete-bg); color: var(--delete); }
+    .ep-path { font-family: var(--font-mono); font-size: 13px; color: var(--text); flex: 1; }
+    .ep-path span { color: var(--accent); }
+    .ep-desc { font-size: 12px; color: var(--muted); margin-right: 8px; }
+    .ep-arrow { color: var(--muted); font-size: 11px; transition: transform .2s; }
+    .ep-arrow.open { transform: rotate(180deg); }
+    .ep-body { display: none; border-top: 1px solid var(--border); padding: 16px; }
+    .ep-body.open { display: block; }
+    .field-label { font-size: 11px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); margin: 14px 0 6px; }
+    .field-label:first-child { margin-top: 0; }
+    .param-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+    .param-item label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; font-family: var(--font-mono); }
+    .param-item input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 7px 10px; font-family: var(--font-mono); font-size: 13px; color: var(--text); outline: none; transition: border-color .15s; }
+    .param-item input:focus { border-color: var(--accent); }
+    textarea.body-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 10px 12px; font-family: var(--font-mono); font-size: 12px; color: var(--text); resize: vertical; min-height: 100px; outline: none; line-height: 1.6; transition: border-color .15s; }
+    textarea.body-input:focus { border-color: var(--accent); }
+    .ep-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; flex-wrap: wrap; gap: 8px; }
+    .btn-send { display: flex; align-items: center; gap: 6px; background: var(--accent); color: #fff; border: none; border-radius: 7px; padding: 8px 18px; font-family: var(--font-sans); font-size: 13px; font-weight: 500; cursor: pointer; transition: all .15s; }
+    .btn-send:hover { background: #6aadff; }
+    .btn-send:active { transform: scale(.98); }
+    .btn-send:disabled { opacity: .6; cursor: not-allowed; }
+    .resp-box { margin-top: 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; overflow: hidden; display: none; }
+    .resp-box.visible { display: block; }
+    .resp-header { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+    .resp-label { font-size: 11px; color: var(--muted); font-weight: 500; }
+    .status-badge { font-size: 11px; font-family: var(--font-mono); padding: 2px 9px; border-radius: 99px; font-weight: 600; }
+    .s2xx { background: var(--success-bg); color: var(--success); }
+    .s4xx, .s5xx, .serr { background: var(--error-bg); color: var(--error); }
+    .resp-body { padding: 10px 12px; font-family: var(--font-mono); font-size: 12px; white-space: pre-wrap; word-break: break-all; max-height: 260px; overflow-y: auto; color: var(--text); line-height: 1.7; }
+    @media (max-width: 700px) { .sidebar { display: none; } .main { padding: 1.25rem; } }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <h1><span class="online-dot"></span>API Dashboard</h1>
+      <p>Proiect / FastAPI</p>
+    </div>
+    <div class="sidebar-label">Entități</div>
+    <div class="nav-item active" onclick="switchTab('Identifiers',this)"><span class="nav-dot"></span>Identifiers<span class="nav-count">6</span></div>
+    <div class="nav-item" onclick="switchTab('Countries',this)"><span class="nav-dot"></span>Countries<span class="nav-count">6</span></div>
+    <div class="nav-item" onclick="switchTab('ConsumerUnits',this)"><span class="nav-dot"></span>Consumer Units<span class="nav-count">6</span></div>
+    <div class="nav-item" onclick="switchTab('Ownership',this)"><span class="nav-dot"></span>Ownership<span class="nav-count">6</span></div>
+    <div class="nav-item" onclick="switchTab('Relationships',this)"><span class="nav-dot"></span>Relationships<span class="nav-count">6</span></div>
+    <div class="nav-item" onclick="switchTab('Characteristics',this)"><span class="nav-dot"></span>Characteristics<span class="nav-count">8</span></div>
+    <div class="sidebar-footer">mssql+pyodbc://GREEN/Proiect</div>
+  </nav>
+
+  <main class="main">
+    <div class="base-url-bar">
+      <label>BASE URL</label>
+      <input type="text" id="base-url" value="http://127.0.0.1:8000" />
+      <span class="base-url-status">● online</span>
+    </div>
+    <div class="page-header">
+      <h2 id="page-title">Identifiers</h2>
+      <p id="page-desc">Gestionează înregistrările din tabelul Identifiers</p>
+    </div>
+    <div id="content"></div>
+  </main>
+</div>
+
+<script>
+const DESCS = {
+  Identifiers: "Gestionează înregistrările din tabelul Identifiers",
+  Countries: "Gestionează lista de țări și codurile ISO",
+  ConsumerUnits: "Unități de consum grupate pe țări",
+  Ownership: "Relații de proprietate ale identificatorilor",
+  Relationships: "Relații între identificatori",
+  Characteristics: "Caracteristici și limite pentru identificatori"
+};
+
+const ENDPOINTS = {
+  Identifiers: [
+    {method:"GET",    path:"/Identifiers/",                   desc:"Toate înregistrările",  params:[],                  body:false},
+    {method:"GET",    path:"/Identifiers/{identifier_name}",  desc:"Caută după nume",        params:["identifier_name"], body:false},
+    {method:"POST",   path:"/Identifiers/",                   desc:"Adaugă nou",             params:[],                  body:'{\n  "identifier_name": "",\n  "description": "",\n  "identifier_type": ""\n}'},
+    {method:"PUT",    path:"/Identifiers/{identifier_name}",  desc:"Actualizează complet",   params:["identifier_name"], body:'{\n  "identifier_name": "",\n  "description": "",\n  "identifier_type": ""\n}'},
+    {method:"PATCH",  path:"/Identifiers/{identifier_name}",  desc:"Actualizare parțială",   params:["identifier_name"], body:'{\n  "description": ""\n}'},
+    {method:"DELETE", path:"/Identifiers/{identifier_name}",  desc:"Șterge",                 params:["identifier_name"], body:false},
+  ],
+  Countries: [
+    {method:"GET",    path:"/Countries/",                  desc:"Toate țările",          params:[],               body:false},
+    {method:"GET",    path:"/Countries/{country_name}",    desc:"Caută după nume",       params:["country_name"], body:false},
+    {method:"POST",   path:"/Countries/",                  desc:"Adaugă țară",           params:[],               body:'{\n  "name": "",\n  "iso_code": "",\n  "short_code": 0\n}'},
+    {method:"PUT",    path:"/Countries/{country_name}",    desc:"Actualizează complet",  params:["country_name"], body:'{\n  "name": "",\n  "iso_code": "",\n  "short_code": 0\n}'},
+    {method:"PATCH",  path:"/Countries/{country_name}",    desc:"Actualizare parțială",  params:["country_name"], body:'{\n  "iso_code": ""\n}'},
+    {method:"DELETE", path:"/Countries/{country_name}",    desc:"Șterge",                params:["country_name"], body:false},
+  ],
+  ConsumerUnits: [
+    {method:"GET",    path:"/ConsumerUnits/",                                          desc:"Toate unitățile",  params:[],                                   body:false},
+    {method:"GET",    path:"/ConsumerUnits/{country_name}",                            desc:"După țară",        params:["country_name"],                      body:false},
+    {method:"POST",   path:"/ConsumerUnits/",                                          desc:"Adaugă",           params:[],                                   body:'{\n  "number_of_consumers": 0,\n  "country_name": ""\n}'},
+    {method:"PUT",    path:"/ConsumerUnits/{country_name}/{number_of_consumers}",      desc:"Actualizează",     params:["country_name","number_of_consumers"], body:'{\n  "number_of_consumers": 0,\n  "country_name": ""\n}'},
+    {method:"PATCH",  path:"/ConsumerUnits/{country_name}/{number_of_consumers}",      desc:"Parțial",          params:["country_name","number_of_consumers"], body:'{\n  "number_of_consumers": 0\n}'},
+    {method:"DELETE", path:"/ConsumerUnits/{country_name}/{number_of_consumers}",      desc:"Șterge",           params:["country_name","number_of_consumers"], body:false},
+  ],
+  Ownership: [
+    {method:"GET",    path:"/Ownership/",                                     desc:"Toate",           params:[],                                    body:false},
+    {method:"GET",    path:"/Ownership/{identifier_name}",                    desc:"După identifier", params:["identifier_name"],                   body:false},
+    {method:"POST",   path:"/Ownership/",                                     desc:"Adaugă",          params:[],                                    body:'{\n  "identifier_name": "",\n  "originator_first_name": "",\n  "originator_last_name": "",\n  "user_id_tnumber": "",\n  "user_id_intranet": "",\n  "email": "",\n  "owner_first_name": "",\n  "owner_last_name": ""\n}'},
+    {method:"PUT",    path:"/Ownership/{identifier_name}/{user_id_tnumber}",  desc:"Actualizează",    params:["identifier_name","user_id_tnumber"],  body:'{\n  "identifier_name": "",\n  "originator_first_name": "",\n  "originator_last_name": "",\n  "user_id_tnumber": "",\n  "user_id_intranet": "",\n  "email": "",\n  "owner_first_name": "",\n  "owner_last_name": ""\n}'},
+    {method:"PATCH",  path:"/Ownership/{identifier_name}/{user_id_tnumber}",  desc:"Parțial",         params:["identifier_name","user_id_tnumber"],  body:'{\n  "email": ""\n}'},
+    {method:"DELETE", path:"/Ownership/{identifier_name}/{user_id_tnumber}",  desc:"Șterge",          params:["identifier_name","user_id_tnumber"],  body:false},
+  ],
+  Relationships: [
+    {method:"GET",    path:"/Relationships/",                                              desc:"Toate",            params:[],                                           body:false},
+    {method:"GET",    path:"/Relationships/{from_identifier_name}",                        desc:"De la identifier", params:["from_identifier_name"],                      body:false},
+    {method:"POST",   path:"/Relationships/",                                              desc:"Adaugă",           params:[],                                           body:'{\n  "from_identifier_name": "",\n  "to_identifier_name": "",\n  "relationship_name": ""\n}'},
+    {method:"PUT",    path:"/Relationships/{from_identifier_name}/{to_identifier_name}",   desc:"Actualizează",     params:["from_identifier_name","to_identifier_name"],  body:'{\n  "from_identifier_name": "",\n  "to_identifier_name": "",\n  "relationship_name": ""\n}'},
+    {method:"PATCH",  path:"/Relationships/{from_identifier_name}/{to_identifier_name}",   desc:"Parțial",          params:["from_identifier_name","to_identifier_name"],  body:'{\n  "relationship_name": ""\n}'},
+    {method:"DELETE", path:"/Relationships/{from_identifier_name}/{to_identifier_name}",   desc:"Șterge",           params:["from_identifier_name","to_identifier_name"],  body:false},
+  ],
+  Characteristics: [
+    {method:"GET",    path:"/Characteristics/",                       desc:"Toate",                params:[],                    body:false},
+    {method:"GET",    path:"/Characteristics/{master_name}",          desc:"După master",          params:["master_name"],        body:false},
+    {method:"GET",    path:"/Characteristics/{master_name}/{name}",   desc:"Specifică",            params:["master_name","name"], body:false},
+    {method:"POST",   path:"/Characteristics/",                       desc:"Adaugă",               params:[],                    body:'{\n  "master_name": "",\n  "name": "",\n  "specifics": null,\n  "action_required": null,\n  "report_type": null,\n  "data_type": null,\n  "lower_routine_release_limit": null,\n  "lower_limit": null,\n  "lower_target": null,\n  "target": null,\n  "upper_target": null,\n  "upper_limit": null,\n  "upper_routine_release_limit": null,\n  "test_frequency": null,\n  "precision": null,\n  "engineering_unit": null\n}'},
+    {method:"PUT",    path:"/Characteristics/{master_name}/{name}",   desc:"Actualizează complet", params:["master_name","name"], body:'{\n  "master_name": "",\n  "name": "",\n  "specifics": null,\n  "action_required": null,\n  "report_type": null,\n  "data_type": null,\n  "lower_limit": null,\n  "target": null,\n  "upper_limit": null,\n  "test_frequency": null,\n  "precision": null,\n  "engineering_unit": null\n}'},
+    {method:"PATCH",  path:"/Characteristics/{master_name}/{name}",   desc:"Parțial",              params:["master_name","name"], body:'{\n  "target": null,\n  "engineering_unit": null\n}'},
+    {method:"DELETE", path:"/Characteristics/{master_name}/{name}",   desc:"Șterge",               params:["master_name","name"], body:false},
+  ]
+};
+
+let currentTab = "Identifiers";
+
+function switchTab(name, el) {
+  currentTab = name;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (el) el.classList.add('active');
+  document.getElementById('page-title').textContent = name;
+  document.getElementById('page-desc').textContent = DESCS[name] || '';
+  render();
+}
+
+function formatPath(path) {
+  return path.replace(/\{([^}]+)\}/g, '<span>{$1}</span>');
+}
+
+function render() {
+  const eps = ENDPOINTS[currentTab] || [];
+  const content = document.getElementById('content');
+  content.innerHTML = '';
+
+  eps.forEach((ep, i) => {
+    const id = currentTab + '_' + i;
+    const wrapper = document.createElement('div');
+    wrapper.className = 'endpoint';
+    wrapper.id = 'ep_' + id;
+
+    // header
+    const hdr = document.createElement('div');
+    hdr.className = 'ep-header';
+    hdr.innerHTML = `
+      <span class="method-badge ${ep.method}">${ep.method}</span>
+      <span class="ep-path">${formatPath(ep.path)}</span>
+      <span class="ep-desc">${ep.desc}</span>
+      <span class="ep-arrow" id="arr_${id}">▼</span>`;
+    hdr.onclick = () => toggle(id);
+
+    // body panel
+    const panel = document.createElement('div');
+    panel.className = 'ep-body';
+    panel.id = 'body_' + id;
+
+    // params
+    const paramRefs = {};
+    if (ep.params.length > 0) {
+      const lbl = document.createElement('div');
+      lbl.className = 'field-label';
+      lbl.textContent = 'Parametri URL';
+      panel.appendChild(lbl);
+
+      const grid = document.createElement('div');
+      grid.className = 'param-grid';
+      ep.params.forEach(p => {
+        const item = document.createElement('div');
+        item.className = 'param-item';
+        const label = document.createElement('label');
+        label.textContent = '{' + p + '}';
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = 'introdu ' + p;
+        input.id = 'p_' + id + '_' + p;
+        paramRefs[p] = input;
+        item.appendChild(label);
+        item.appendChild(input);
+        grid.appendChild(item);
+      });
+      panel.appendChild(grid);
+    }
+
+    // body textarea
+    let bodyRef = null;
+    if (ep.body !== false) {
+      const lbl = document.createElement('div');
+      lbl.className = 'field-label';
+      lbl.textContent = 'Request Body — JSON';
+      panel.appendChild(lbl);
+
+      const ta = document.createElement('textarea');
+      ta.className = 'body-input';
+      ta.id = 'rb_' + id;
+      ta.value = ep.body;
+      bodyRef = ta;
+      panel.appendChild(ta);
+    }
+
+    // footer + button
+    const footer = document.createElement('div');
+    footer.className = 'ep-footer';
+
+    const btn = document.createElement('button');
+    btn.className = 'btn-send';
+    btn.id = 'btn_' + id;
+    btn.textContent = '▶ Trimite';
+    btn.onclick = () => runRequest(id, ep.method, ep.path, paramRefs, bodyRef);
+
+    const urlHint = document.createElement('span');
+    urlHint.style.cssText = 'font-size:11px;color:var(--muted);font-family:var(--font-mono)';
+    urlHint.textContent = ep.method + ' ' + ep.path;
+
+    footer.appendChild(btn);
+    footer.appendChild(urlHint);
+    panel.appendChild(footer);
+
+    // response box
+    const respBox = document.createElement('div');
+    respBox.className = 'resp-box';
+    respBox.id = 'resp_' + id;
+    respBox.innerHTML = `
+      <div class="resp-header">
+        <span class="resp-label">Răspuns</span>
+        <span class="status-badge" id="st_${id}"></span>
+        <span style="font-size:11px;color:var(--muted);margin-left:auto" id="time_${id}"></span>
+      </div>
+      <div class="resp-body" id="rb2_${id}"></div>`;
+    panel.appendChild(respBox);
+
+    wrapper.appendChild(hdr);
+    wrapper.appendChild(panel);
+    content.appendChild(wrapper);
+  });
+}
+
+function toggle(id) {
+  const panel = document.getElementById('body_' + id);
+  const arr   = document.getElementById('arr_' + id);
+  const ep    = document.getElementById('ep_' + id);
+  const isOpen = panel.classList.contains('open');
+  panel.classList.toggle('open', !isOpen);
+  arr.classList.toggle('open', !isOpen);
+  ep.classList.toggle('expanded', !isOpen);
+}
+
+async function runRequest(id, method, pathTpl, paramRefs, bodyRef) {
+  // build URL
+  const baseUrl = document.getElementById('base-url').value.replace(/\/$/, '');
+  let path = pathTpl;
+  for (const [name, input] of Object.entries(paramRefs)) {
+    const val = input.value.trim();
+    if (!val) {
+      alert('Completează câmpul: ' + name);
+      input.focus();
+      return;
+    }
+    path = path.replace('{' + name + '}', encodeURIComponent(val));
+  }
+  const url = baseUrl + path;
+
+  // build fetch options — DELETE si GET nu trimit body niciodata
+  const opts = { method };
+  const needsBody = ['POST', 'PUT', 'PATCH'].includes(method);
+  if (needsBody && bodyRef) {
+    opts.headers = { 'Content-Type': 'application/json' };
+    const raw = bodyRef.value.trim();
+    try {
+      // valideaza JSON inainte sa trimita
+      JSON.parse(raw);
+      opts.body = raw;
+    } catch(e) {
+      alert('JSON invalid in body:\n' + e.message);
+      bodyRef.focus();
+      return;
+    }
+  }
+
+  // UI loading state
+  const btn    = document.getElementById('btn_' + id);
+  const resp   = document.getElementById('resp_' + id);
+  const st     = document.getElementById('st_' + id);
+  const rb2    = document.getElementById('rb2_' + id);
+  const timeEl = document.getElementById('time_' + id);
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Se trimite...';
+  resp.className = 'resp-box visible';
+  st.className = 'status-badge';
+  st.textContent = '...';
+  rb2.textContent = 'Se așteaptă răspunsul de la ' + url;
+  timeEl.textContent = '';
+
+  const t0 = Date.now();
+  try {
+    const res = await fetch(url, opts);
+    const ms = Date.now() - t0;
+    const text = await res.text();
+
+    let formatted = text;
+    try { formatted = JSON.stringify(JSON.parse(text), null, 2); } catch(e) {}
+
+    const cls = res.status >= 200 && res.status < 300 ? 's2xx'
+              : res.status >= 500 ? 's5xx' : 's4xx';
+    st.className = 'status-badge ' + cls;
+    st.textContent = res.status + ' ' + res.statusText;
+    timeEl.textContent = ms + 'ms';
+    rb2.textContent = formatted || '(răspuns gol)';
+
+  } catch(e) {
+    st.className = 'status-badge serr';
+    st.textContent = 'Eroare rețea';
+    rb2.textContent = 'Nu s-a putut conecta la:\n' + url + '\n\n'
+      + e.message + '\n\n'
+      + 'Verifică:\n'
+      + '1. FastAPI rulează (uvicorn main:app --reload)\n'
+      + '2. Base URL este corect\n'
+      + '3. CORSMiddleware este adăugat în main.py';
+    timeEl.textContent = '';
+  }
+
+  btn.disabled = false;
+  btn.textContent = '▶ Trimite';
+}
+
+render();
+</script>
+</body>
+</html>
