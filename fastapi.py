@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session,sessionmaker, declarative_base
 from sqlalchemy import create_engine
 from fastapi.responses import HTMLResponse
-from proiect_classes import (
+from classes import (
     Base,
     # Cele de baza:
     Identifier, Country, ConsumerUnit, Ownership,

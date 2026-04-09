@@ -99,3 +99,139 @@ def test_delete_characteristic(client):
     assert response.status_code == 200
     assert "deleted" in response.json()["detail"]
 
+
+#============Identifiers si Country===========================#
+
+
+from fastapi.testclient import TestClient
+import pytest
+from proiect_mainapi import app, get_db
+
+client = TestClient(app)
+
+@pytest.fixture(autouse=True)
+def cleanup():
+    yield
+    client.delete("/Identifiers/CNP")
+    client.delete("/Countries/Romania")
+
+
+def test_create_identifier():
+    response = client.post("/Identifiers/", json={
+        "identifier_name": "CNP",
+        "description": "Cod Numeric Personal",
+        "identifier_type": "Personal"
+    })
+    assert response.status_code == 200
+    assert response.json()["identifier_name"] == "CNP"
+
+def test_get_identifier():
+    client.post("/Identifiers/", json={
+        "identifier_name": "CNP",
+        "description": "Cod Numeric Personal",
+        "identifier_type": "Personal"
+    })
+    response = client.get("/Identifiers/CNP")
+    assert response.status_code == 200
+    assert response.json()["identifier_name"] == "CNP"
+
+def test_get_identifier_not_found():
+    response = client.get("/Identifiers/INEXISTENT")
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Identifier not found"}
+
+def test_put_identifier():
+    client.post("/Identifiers/", json={
+        "identifier_name": "CNP",
+        "description": "Vechi",
+        "identifier_type": "Personal"
+    })
+    response = client.put("/Identifiers/CNP", json={
+        "identifier_name": "CNP",
+        "description": "Nou",
+        "identifier_type": "Personal"
+    })
+    assert response.status_code == 200
+    assert response.json()["description"] == "Nou"
+
+def test_patch_identifier():
+    client.post("/Identifiers/", json={
+        "identifier_name": "CNP",
+        "description": "Original",
+        "identifier_type": "Personal"
+    })
+    response = client.patch("/Identifiers/CNP", json={"description": "Actualizat"})
+    assert response.status_code == 200
+    assert response.json()["description"] == "Actualizat"
+
+def test_delete_identifier():
+    client.post("/Identifiers/", json={
+        "identifier_name": "CNP",
+        "description": "De sters",
+        "identifier_type": "Personal"
+    })
+    response = client.delete("/Identifiers/CNP")
+    assert response.status_code == 200
+    assert response.json() == {"detail": "Identifier 'CNP' deleted"}
+    assert client.get("/Identifiers/CNP").status_code == 404
+
+
+
+def test_create_country():
+    response = client.post("/Countries/", json={
+        "name": "Romania",
+        "iso_code": "ROU",
+        "short_code": 40
+    })
+    assert response.status_code == 200
+    assert response.json()["name"] == "Romania"
+
+def test_get_country():
+    client.post("/Countries/", json={
+        "name": "Romania",
+        "iso_code": "ROU",
+        "short_code": 40
+    })
+    response = client.get("/Countries/Romania")
+    assert response.status_code == 200
+    assert response.json()["name"] == "Romania"
+
+def test_get_country_not_found():
+    response = client.get("/Countries/Narnia")
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Country not found"}
+
+def test_put_country():
+    client.post("/Countries/", json={
+        "name": "Romania",
+        "iso_code": "ROU",
+        "short_code": 40
+    })
+    response = client.put("/Countries/Romania", json={
+        "name": "Romania",
+        "iso_code": "ROM",
+        "short_code": 40
+    })
+    assert response.status_code == 200
+    assert response.json()["iso_code"] == "ROM"
+
+def test_patch_country():
+    client.post("/Countries/", json={
+        "name": "Romania",
+        "iso_code": "ROU",
+        "short_code": 40
+    })
+    response = client.patch("/Countries/Romania", json={"iso_code": "RO"})
+    assert response.status_code == 200
+    assert response.json()["iso_code"] == "RO"
+
+def test_delete_country():
+    client.post("/Countries/", json={
+        "name": "Romania",
+        "iso_code": "ROU",
+        "short_code": 40
+    })
+    response = client.delete("/Countries/Romania")
+    assert response.status_code == 200
+    assert response.json() == {"detail": "Country 'Romania' deleted"}
+    assert client.get("/Countries/Romania").status_code == 404
