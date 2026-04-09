@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session,sessionmaker, declarative_base
 from sqlalchemy import create_engine
 from fastapi.responses import HTMLResponse
-from classes import (
+from proiect_classes import (
     Base,
     # Cele de baza:
     Identifier, Country, ConsumerUnit, Ownership,
@@ -506,5 +506,3 @@ def delete_characteristic(master_name: str, name: str, db: Session = Depends(get
     db.delete(obj)
     db.commit()
     return {"detail": f"Characteristic ({master_name}, {name}) deleted"}
- 
- 
